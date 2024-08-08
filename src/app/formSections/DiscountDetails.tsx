@@ -17,6 +17,7 @@ const DiscountDetails: React.FC<DiscountDetailsProps> = ({initialValues}) => {
   const discountDetails = useSelector((state: RootState) => state.discountDetails);
   const { discountType, discountAmount, totalAfterDiscount } = discountDetails;
 
+  console.log("iniiiiiiiii0",initialValues)
   const { control, handleSubmit, watch, setValue, reset } = useForm<DiscountDetail>({
     defaultValues: initialValues || {
       discountType: discountType || 'Amount',
@@ -82,7 +83,7 @@ const DiscountDetails: React.FC<DiscountDetailsProps> = ({initialValues}) => {
                 label="Discount Amount"
                 value={field.value}
                 onChange={(e) => field.onChange(Number(e.target.value))}
-                min={watchedDiscountType === 'Percentage' ? 1 : 0} name={''}          />
+                min={watchedDiscountType === 'Percentage' ? 1 : 0} name="discountAmount"          />
         )}
       />
 

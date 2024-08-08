@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { AppDispatch, RootState } from '../store/store';
-import { addShutter, setShutterDetails, ShutterDetail } from '../store/formSlice';
+import { addShutter, setShutterDetails, ShutterDetail, updateTotalAfterDiscount } from '../store/formSlice';
 import Dropdown from '../components/Dropdown';
 import Button from '../components/Button';
 import Modal from '../components/Modal';
@@ -16,10 +16,15 @@ interface ShutterDetailsProps {
     totalAreaVal?: number;
 }
 
+
 const ShutterDetails: React.FC<ShutterDetailsProps> = ({initialValues, totalAreaVal}) => {
+    let editShutterData;
+    if(initialValues && initialValues.length>0){
+        editShutterData = initialValues;
+    }
     const {setValue, getValues, control, reset } = useForm<ShutterForm>({
         defaultValues: {
-            shutterDetails: initialValues || [
+            shutterDetails: editShutterData || [
                 {
                     shutterName: '',
                     width: 0,
@@ -30,6 +35,7 @@ const ShutterDetails: React.FC<ShutterDetailsProps> = ({initialValues, totalArea
         }
     });
     const dispatch = useDispatch<AppDispatch>();
+    const state = useSelector((state: RootState) => state);
     const shutters = useSelector((state: RootState) => state.shutters);
     const totalArea = useSelector((state: RootState) => state.totalArea);
     const shutterData = useSelector((state: RootState) => state.shutterDetails);
@@ -56,13 +62,18 @@ const ShutterDetails: React.FC<ShutterDetailsProps> = ({initialValues, totalArea
             shutterName: shutter.shutterName
         });
         const updatedShutterDetails = getValues('shutterDetails');
+        console.log("1222222222222222222", updatedShutterDetails)
         dispatch(setShutterDetails(updatedShutterDetails));
+        dispatch(updateTotalAfterDiscount())
+
     };
 
     const handleRemove = (index: number) => {
-        const updatedShutterDetails = getValues('shutterDetails');
-        dispatch(setShutterDetails(updatedShutterDetails));
         remove(index);
+        const updatedShutterDetails = [...getValues('shutterDetails')]; 
+        dispatch(setShutterDetails(updatedShutterDetails));
+        dispatch(updateTotalAfterDiscount())
+
     };
 
     const handleFieldChange = (index: number, key: keyof ShutterDetail, value: number | string) => {
@@ -83,12 +94,16 @@ const ShutterDetails: React.FC<ShutterDetailsProps> = ({initialValues, totalArea
 
         setValue('shutterDetails', updatedShutterDetails);
         dispatch(setShutterDetails(updatedShutterDetails));
+        dispatch(updateTotalAfterDiscount())
     }
 
     // useEffect(() => {
-    //     if (initialValues) {
+    //     if (!initialValues) {
     //         reset({ shutterDetails: initialValues });
     //     }
+    //     const updatedShutterDetails = [...getValues('shutterDetails')];
+    //     dispatch(setShutterDetails(updatedShutterDetails));
+
     // }, [initialValues, reset]);
 
     return (
@@ -143,7 +158,7 @@ const ShutterDetails: React.FC<ShutterDetailsProps> = ({initialValues, totalArea
             <Button type="button" onClick={() => append({ shutterName: '', width: 0, height: 0, area: 0 })}>
                 Add Shutter
             </Button>
-            <div>Total Area: {totalAreaVal ||totalArea}</div>
+            <div>Total Area: {totalArea}</div>
 
             <Modal
                 isOpen={isModalOpen}

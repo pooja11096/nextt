@@ -64,6 +64,7 @@ const formSlice = createSlice({
             state.generalDetails = action.payload
         },
         setShutterDetails: (state, action: PayloadAction<ShutterDetail[]>) =>{
+            console.log("{{{{{{{{first}}}}}}}}", state.shutterDetails)
             state.shutterDetails = action.payload;
             state.totalArea = state.shutterDetails.reduce((acc,shutter)=> acc + shutter.area, 0 )
         },

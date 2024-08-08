@@ -27,7 +27,7 @@ const Modal:React.FC<ModalProps> = ({isOpen,closeModal,onSubmit,title,placeholde
          value={inputValue}
          onChange={(e) => setInputValue(e.target.value)}
          placeholder={placeholder} 
-         label={placeholder}
+        //  label={placeholder}
          name='title'
          />
          <Button onClick={handleSubmit}>Submit</Button>
