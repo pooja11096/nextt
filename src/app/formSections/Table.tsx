@@ -53,8 +53,8 @@ const Table: React.FC = () => {
               <td>{item.general.selectedCustomer}</td>
               <td>{item.discount.totalAfterDiscount}</td>
               <td>
-                <Button onClick={() => handleEdit(index)}>Edit</Button>
-                <Button onClick={() => handleDelete(index)}>Delete</Button>
+                <Button onClick={() => handleEdit(item.id as any)}>Edit</Button>
+                <Button onClick={() => handleDelete(item.id as any)}>Delete</Button>
               </td>
             </tr>
           ))}

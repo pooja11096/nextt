@@ -1,44 +1,64 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, FormProvider } from 'react-hook-form';
 import { AppDispatch, RootState } from '../store/store';
-import { addShutter, setShutterDetails, ShutterDetail } from '../store/formSlice';
+import { addShutter, setShutterDetails, ShutterDetail, updateTotalAfterDiscount } from '../store/formSlice';
 import Dropdown from '../components/Dropdown';
 import Button from '../components/Button';
 import Modal from '../components/Modal';
 import Input from '../components/Input';
+import ShutterDetailItem from './ShutterDetailItem'; 
+import {
+    DndContext,
+    DragEndEvent,
+    KeyboardSensor,
+    PointerSensor,
+    closestCenter,
+    useSensor,
+    useSensors,
+} from '@dnd-kit/core';
+import {
+    SortableContext,
+    arrayMove,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 
 interface ShutterForm {
     shutterDetails: ShutterDetail[];
 }
+
 interface ShutterDetailsProps {
     initialValues?: ShutterDetail[];
     totalAreaVal?: number;
 }
 
-const ShutterDetails: React.FC<ShutterDetailsProps> = ({initialValues, totalAreaVal}) => {
-    const {setValue, getValues, control, reset } = useForm<ShutterForm>({
+const ShutterDetails: React.FC<ShutterDetailsProps> = ({ initialValues, totalAreaVal }) => {
+    const methods = useForm<ShutterForm>({
         defaultValues: {
             shutterDetails: initialValues || [
                 {
+                    id: Date.now(),
                     shutterName: '',
                     width: 0,
                     height: 0,
-                    area: 0
-                }
-            ]
-        }
+                    area: 0,
+                },
+            ],
+        },
     });
+
+    const { setValue, getValues, control } = methods;
     const dispatch = useDispatch<AppDispatch>();
     const shutters = useSelector((state: RootState) => state.shutters);
     const totalArea = useSelector((state: RootState) => state.totalArea);
-    const shutterData = useSelector((state: RootState) => state.shutterDetails);
 
     const [isModalOpen, setModalOpen] = useState(false);
 
-    const { fields, append, remove, update } = useFieldArray({
+    const { fields, append, remove } = useFieldArray({
         control,
-        name: 'shutterDetails'
+        name: 'shutterDetails',
     });
 
     const handleAddShutter = () => {
@@ -53,16 +73,18 @@ const ShutterDetails: React.FC<ShutterDetailsProps> = ({initialValues, totalArea
         const shutter = getValues('shutterDetails')[index];
         append({
             ...shutter,
-            shutterName: shutter.shutterName
+            shutterName: shutter.shutterName,
         });
         const updatedShutterDetails = getValues('shutterDetails');
         dispatch(setShutterDetails(updatedShutterDetails));
+        dispatch(updateTotalAfterDiscount());
     };
 
     const handleRemove = (index: number) => {
-        const updatedShutterDetails = getValues('shutterDetails');
-        dispatch(setShutterDetails(updatedShutterDetails));
         remove(index);
+        const updatedShutterDetails = [...getValues('shutterDetails')];
+        dispatch(setShutterDetails(updatedShutterDetails));
+        dispatch(updateTotalAfterDiscount());
     };
 
     const handleFieldChange = (index: number, key: keyof ShutterDetail, value: number | string) => {
@@ -83,64 +105,56 @@ const ShutterDetails: React.FC<ShutterDetailsProps> = ({initialValues, totalArea
 
         setValue('shutterDetails', updatedShutterDetails);
         dispatch(setShutterDetails(updatedShutterDetails));
+        dispatch(updateTotalAfterDiscount());
+    };
+
+    function handleDragEnd(event: DragEndEvent) {
+        const { active, over } = event;
+        if (over && active.id !== over.id) {
+            const oldIndex = fields.findIndex((item) => item.id === active.id);
+            const newIndex = fields.findIndex((item) => item.id === over.id);
+            const updatedShutterDetails = arrayMove(getValues('shutterDetails'), oldIndex, newIndex);
+            setValue('shutterDetails', updatedShutterDetails);
+            dispatch(setShutterDetails(updatedShutterDetails));
+            dispatch(updateTotalAfterDiscount());
+        }
     }
 
-    // useEffect(() => {
-    //     if (initialValues) {
-    //         reset({ shutterDetails: initialValues });
-    //     }
-    // }, [initialValues, reset]);
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
 
     return (
-        <>
-            {fields.map((field, index) => (
-                <div key={field.id} style={{ marginBottom: '1rem' }}>
-                    <Dropdown
-                        name={`shutterDetails.${index}.shutterName`}
-                        options={shutters}
-                        onChange={(e) => {
-                            const updatedShutterDetails = getValues('shutterDetails').map((shutter, i) => 
-                                i === index ? { ...shutter, shutterName: e.target.value } : shutter
-                            );
-                            setValue('shutterDetails', updatedShutterDetails);
-                            dispatch(setShutterDetails(updatedShutterDetails)); 
-                        }}
-                        selectedValue={field.shutterName}
-                        label='Shutter Name:'
-                    />
-                    <Button onClick={handleAddShutter}>+</Button>
-
-                    <Input
-                        type="number"
-                        name={`shutterDetails.${index}.width`}
-                        label="Width:"
-                        value={field.width}
-                        onChange={(e) => handleFieldChange(index, 'width', parseFloat(e.target.value))}
-                    />
-
-                    <Input
-                        type="number"
-                        name={`shutterDetails.${index}.height`}
-                        label="Height:"
-                        value={field.height}
-                        onChange={(e) => handleFieldChange(index, 'height', parseFloat(e.target.value))}
-                    />
-
-                    <Input
-                        type="text"
-                        label='Area:'
-                        name={`shutterDetails.${index}.area`}
-                        value={field.area}
-                        readOnly
-                    />
-
-                    {index != 0 && (
-                        <Button onClick={() => handleRemove(index)}>Remove</Button>
-                    )}
-                    <Button onClick={() => handleCloneShutter(index)}>Clone</Button>
-                </div>
-            ))}
-            <Button type="button" onClick={() => append({ shutterName: '', width: 0, height: 0, area: 0 })}>
+        <FormProvider {...methods}> 
+            <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+                modifiers={[restrictToVerticalAxis]}
+            >
+                <SortableContext
+                    items={fields.map((field) => field.id)}
+                    strategy={verticalListSortingStrategy}
+                >
+                    {fields.map((field, index) => (
+                        <ShutterDetailItem
+                            key={field.id}
+                            id={field.id}
+                            index={index}
+                            shutterDetail={field}
+                            handleAddShutter={handleAddShutter}
+                            onRemove={handleRemove}
+                            onClone={handleCloneShutter}
+                            shutters={shutters}
+                            handleFieldChange={handleFieldChange}
+                        />
+                    ))}
+                </SortableContext>
+            </DndContext>
+            <Button type="button" onClick={() => append({ id: Date.now(), shutterName: '', width: 0, height: 0, area: 0 })}>
                 Add Shutter
             </Button>
             <div>Total Area: {totalAreaVal ||totalArea}</div>
@@ -152,7 +166,7 @@ const ShutterDetails: React.FC<ShutterDetailsProps> = ({initialValues, totalArea
                 placeholder='Enter Shutter Name'
                 title='Add Shutter'
             />
-        </>
+        </FormProvider>
     );
 };
 

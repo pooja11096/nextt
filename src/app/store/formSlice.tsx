@@ -7,6 +7,7 @@ export interface GeneralDetail{
 }
 
 export interface ShutterDetail{
+    id: number| string,
     shutterName: string;
     width: number;
     height: number;
@@ -26,6 +27,7 @@ interface FormState{
     customers: string[];
     shutters:string[];
     dataList:{
+        id: string | number,
         general: GeneralDetail,
         shutter: ShutterDetail[],
         discount: DiscountDetail,
@@ -64,6 +66,15 @@ const formSlice = createSlice({
             state.generalDetails = action.payload
         },
         setShutterDetails: (state, action: PayloadAction<ShutterDetail[]>) =>{
+            console.log("{{{{{{{{first}}}}}}}}", state.shutterDetails)
+            const newShutterData = action.payload;
+            // if(state.shutterDetails.find(item => item.id === newShutterData.id)){
+            //     state.shutterDetails.map(data => 
+            //         data.id === newShutterData.id ? newShutterData:data
+            //     )
+            // }else{
+            //     state.shutterDetails.push(newShutterData)
+            // }
             state.shutterDetails = action.payload;
             state.totalArea = state.shutterDetails.reduce((acc,shutter)=> acc + shutter.area, 0 )
         },
@@ -88,16 +99,24 @@ const formSlice = createSlice({
       
             state.discountDetails.totalAfterDiscount = total;
         },
-        setDataList: (state) =>{
-            const newData = {
-                general : state.generalDetails,
-                shutter: state.shutterDetails,
-                discount: state.discountDetails,
-                totalArea: state.totalArea
-            }
+        setDataList: (state, action: PayloadAction<any>) =>{
+            // const newData = {
+            //     general : state.generalDetails,
+            //     shutter: state.shutterDetails,
+            //     discount: state.discountDetails,
+            //     totalArea: state.totalArea
+            // }
+            const newData = action.payload;
             console.log("sttt",state.totalArea);
+            if(state.dataList.find(item => item.id === newData.id)){
+                state.dataList = state.dataList.map(item =>
+                    item.id === newData.id? newData: item
+                )
+            }else{
+                state.dataList.push(newData)
+            }
 
-            state.dataList.push(newData);
+            // state.dataList.push(newData);
 
             state.generalDetails = initialState.generalDetails;
             state.shutterDetails = initialState.shutterDetails;
@@ -108,8 +127,14 @@ const formSlice = createSlice({
         updateDataList: (state, action: PayloadAction<{ index: number; updatedData: any }>) => {
             console.log("updateee", action.payload)
             const { index, updatedData } = action.payload;
-            state.dataList[index] = updatedData;
+            const editIndex = state.dataList.findIndex(item => item.id === index);
 
+            if (editIndex !== -1) {
+                state.dataList[editIndex] = {
+                    ...state.dataList[editIndex],
+                    ...updatedData,
+                };
+            }
             state.generalDetails = initialState.generalDetails;
             state.shutterDetails = initialState.shutterDetails;
             state.discountDetails = initialState.discountDetails;

@@ -14,6 +14,7 @@ interface FormProps {
 }
 
 interface DataListProps {
+    id: string,
     general: GeneralDetail,
     shutter: ShutterDetail[],
     discount: DiscountDetail,
@@ -24,10 +25,11 @@ const MainForm: React.FC<FormProps> = ({ isEditing, editIndex, onClose }) => {
 const { reset, setValue, watch } = useForm<DataListProps>()
 const dispatch = useDispatch<AppDispatch>();
 const dataList = useSelector((state: RootState) => state.dataList);
-const generalData = isEditing && editIndex !== null ? dataList[editIndex].general : null;
-const shutterData = isEditing && editIndex !== null ? dataList[editIndex].shutter : [];
-const totalArea = isEditing && editIndex !== null ? dataList[editIndex].totalArea : 0;
-const discountData = isEditing && editIndex !== null ? dataList[editIndex].discount : null;
+const editData = isEditing && editIndex !== null ? dataList.find((d)=>d.id === editIndex):null;
+const generalData = editData?.general;
+const shutterData = editData?.shutter;
+const totalArea = editData?.totalArea;
+const discountData = editData?.discount;
 
 const generalDetail = useSelector((state:RootState)=>state.generalDetails);
 const shutterDetail = useSelector((state:RootState)=>state.shutterDetails);
@@ -37,19 +39,21 @@ const totalAreaValue = useSelector((state:RootState)=>state.totalArea);
 
 useEffect(() => {
     if (isEditing && editIndex !== null) {
-      const data = dataList[editIndex];
+      const data = dataList.find((d)=>d.id === editIndex);
       // const dataToEdit = dataList[editIndex];
-      dispatch(setShutterDetails(data.shutter));
-      dispatch(setGeneralDetails(data.general));
-      dispatch(setDiscountDetails(data.discount));
-      // setValue('generalDetails', data.general);
-      // setValue('discountDetails', data.discount);
-      reset({
-       general : data.general,
-       shutter: data.shutter,
-       discount: data.discount,
-       totalArea: data.totalArea
-      });
+      if(data){
+        dispatch(setShutterDetails(data.shutter));
+        dispatch(setGeneralDetails(data.general));
+        dispatch(setDiscountDetails(data.discount));
+        // setValue('generalDetails', data.general);
+        // setValue('discountDetails', data.discount);
+        reset({
+         general : data.general,
+         shutter: data.shutter,
+         discount: data.discount,
+         totalArea: data.totalArea
+        });
+      }
     }else{
       console.log("elseeeeeeeeeeeeeeeee")
       reset();
