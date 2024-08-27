@@ -9,6 +9,8 @@ import ShutterDetails from './ShutterDetails';
 import DiscountDetails from './DiscountDetails';
 import Button from '../components/Button';
 import { useForm } from 'react-hook-form';
+import { useRouter } from 'next/navigation';
+import {toast} from 'react-toastify';
 
 interface FormProps {
     isEditing: boolean;
@@ -17,7 +19,7 @@ interface FormProps {
 
 interface DataListProps {
     id: string;
-    general: GeneralDetail;
+    general: GeneralDetail; 
     shutter: ShutterDetail[];
     discount: DiscountDetail;
     totalArea: number;
@@ -27,6 +29,7 @@ const MainForm: React.FC<FormProps> = ({ isEditing, editIndex }) => {
     const { reset, setValue, watch } = useForm<DataListProps>();
     const dispatch = useDispatch<AppDispatch>(); // Ensure this is within the Provider
     const dataList = useSelector((state: RootState) => state.dataList);
+    const router = useRouter();
     const editData = isEditing && editIndex !== null ? dataList.find((d) => d.id === editIndex) : null;
     const generalData = editData?.general;
     const shutterData = editData?.shutter;
@@ -59,6 +62,7 @@ const MainForm: React.FC<FormProps> = ({ isEditing, editIndex }) => {
 
     const handleSave = () => {
         const newData = {
+            id: isEditing && editIndex !== null ? editIndex : Date.now(),
             general: generalDetail,
             shutter: shutterDetail,
             discount: discountDetail,
@@ -66,9 +70,12 @@ const MainForm: React.FC<FormProps> = ({ isEditing, editIndex }) => {
         };
         if (isEditing && editIndex !== null) {
             dispatch(updateDataList({ index: editIndex, updatedData: newData }));
+            toast.success('Data updated successfully!');
         } else {
             dispatch(setDataList(newData as any));
+            toast.success('Data saved successfully!');
         }
+        router.push('/');
     };
 
     const handleReset = () => {

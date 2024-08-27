@@ -18,6 +18,7 @@ const Table: React.FC = () => {
 
   const handleEdit = (index: number) => {
     dispatch(setDataToEdit(index));
+    console.log("indexxxxxxxxxxx",index)
     router.push(`/form/edit?index=${index}`);
   };
 
@@ -40,6 +41,7 @@ const Table: React.FC = () => {
         <tbody>
           {dataList.map((item, index) => (
             <tr key={index}>
+              <td>{item.id}</td>
               <td>{item.general.personName}</td>
               <td>{item.general.selectedCustomer}</td>
               <td>{item.discount.totalAfterDiscount}</td>
